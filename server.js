@@ -870,9 +870,10 @@ async function handleApiRequest(request, response, pathname) {
 function getFilePath(requestUrl) {
   const parsedUrl = new URL(requestUrl, `http://localhost:${START_PORT}`);
   const safePath = path.normalize(decodeURIComponent(parsedUrl.pathname)).replace(/^(\.\.[/\\])+/, "");
-  const requestedPath = safePath === "/" ? "/index.html" : safePath;
+  const requestedPath = safePath === "/" ? "/pages/index.html" : safePath;
+  const pagesPath = /^\/[^/]+\.html$/.test(requestedPath) ? `/pages${requestedPath}` : requestedPath;
 
-  return path.join(PUBLIC_DIR, requestedPath);
+  return path.join(PUBLIC_DIR, pagesPath);
 }
 
 function sendFile(response, filePath) {
@@ -913,7 +914,7 @@ async function handleRequest(request, response) {
       return;
     }
 
-    sendFile(response, path.join(PUBLIC_DIR, "index.html"));
+    sendFile(response, path.join(PUBLIC_DIR, "pages", "index.html"));
   });
 }
 
