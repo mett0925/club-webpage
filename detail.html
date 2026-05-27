@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>동아리 모집 공고 상세 | 동아리픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="우리학교 동아리픽 홈">
+        <span class="brand-mark">C</span>
+        <span>동아리픽</span>
+      </a>
+      <nav class="top-nav" aria-label="주요 메뉴">
+        <a href="index.html#clubs">동아리</a>
+        <a href="index.html#process">가입 안내</a>
+        <a href="index.html#faq">FAQ</a>
+      </nav>
+      <div class="header-actions" data-auth-state>
+        <a class="header-login" href="login.html" data-auth-login-link>로그인</a>
+        <a class="user-chip" href="mypage.html" data-auth-user hidden></a>
+        <button class="header-logout" type="button" data-auth-logout hidden>로그아웃</button>
+        <a class="header-cta" href="clubs.html">모집 공고</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="club-detail-page">
+    <a class="detail-back-link" href="clubs.html">목록으로</a>
+    <article class="club-detail-card" id="clubDetail" hidden>
+      <div class="club-detail-header">
+        <div class="detail-source">
+          <span class="detail-logo">C</span>
+          <span>동아리픽 모집 공고</span>
+        </div>
+        <h1 data-detail-title>모집 공고</h1>
+        <p data-detail-description></p>
+        <div class="detail-chip-row">
+          <span class="badge" data-detail-category>동아리</span>
+          <span class="detail-chip" data-detail-deadline-chip>마감 정보</span>
+        </div>
+      </div>
+
+      <div class="club-detail-layout">
+        <aside class="club-detail-sidebar">
+          <dl>
+            <div>
+              <dt>모집 대상</dt>
+              <dd data-detail-target>-</dd>
+            </div>
+            <div>
+              <dt>활동 시간</dt>
+              <dd data-detail-time>-</dd>
+            </div>
+            <div>
+              <dt>모집 인원</dt>
+              <dd data-detail-capacity>-</dd>
+            </div>
+            <div>
+              <dt>마감</dt>
+              <dd data-detail-deadline>-</dd>
+            </div>
+          </dl>
+        </aside>
+
+        <section class="club-detail-content">
+          <h2>모집 소개</h2>
+          <p data-detail-body></p>
+          <h2>활동 안내</h2>
+          <ul class="detail-bullets" data-detail-bullets></ul>
+        </section>
+      </div>
+    </article>
+
+    <section class="club-detail-card mypage-guard" id="detailError" hidden>
+      <h2>공고를 찾을 수 없습니다</h2>
+      <p>모집 공고 목록에서 다시 선택해주세요.</p>
+      <a class="primary-button" href="clubs.html">모집 공고 보기</a>
+    </section>
+  </main>
+
+  <div class="detail-bottom-bar">
+    <a class="primary-button detail-submit-button" data-detail-apply href="apply.html">지원하기</a>
+  </div>
+
+  <footer class="site-footer">
+    <strong>동아리픽</strong>
+    <span>우리 학교 동아리 정보를 가장 빠르게 확인하세요.</span>
+  </footer>
+
+  <script src="header-auth.js"></script>
+  <script src="detail.js"></script>
+</body>
+</html>

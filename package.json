@@ -1,0 +1,21 @@
+{
+  "name": "club-web-page",
+  "version": "1.0.0",
+  "description": "우리 학교 동아리 소개 및 가입 신청 페이지",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "club",
+    "campus",
+    "node"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "mysql2": "^3.22.4",
+    "nodemailer": "^8.0.9"
+  }
+}

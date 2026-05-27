@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>모집 공고 올리기 | 동아리픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="우리학교 동아리픽 홈">
+        <span class="brand-mark">C</span>
+        <span>동아리픽</span>
+      </a>
+      <nav class="top-nav" aria-label="주요 메뉴">
+        <a href="index.html#clubs">동아리</a>
+        <a href="index.html#process">가입 안내</a>
+        <a href="index.html#faq">FAQ</a>
+      </nav>
+      <div class="header-actions" data-auth-state>
+        <a class="header-login" href="login.html" data-auth-login-link>로그인</a>
+        <a class="user-chip" href="mypage.html" data-auth-user hidden></a>
+        <button class="header-logout" type="button" data-auth-logout hidden>로그아웃</button>
+        <a class="header-cta" href="clubs.html">모집 공고</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="apply-page">
+    <section class="apply-page-hero">
+      <a class="back-link" href="mypage.html">← 마이페이지로 돌아가기</a>
+      <p class="eyebrow">Recruit Post</p>
+      <h1>동아리 모집 공고 올리기</h1>
+      <p class="hero-description">작성한 공고는 모집 공고 페이지에 표시되고, 들어온 지원서는 마이페이지에서 확인할 수 있습니다.</p>
+    </section>
+
+    <section class="application-card" id="postContent" hidden>
+      <form class="post-form" id="clubPostForm">
+        <label>
+          동아리명
+          <input type="text" name="clubName" placeholder="예: CodeMate" required>
+        </label>
+        <label>
+          분야
+          <select name="category" required>
+            <option value="">분야 선택</option>
+            <option value="study">학술</option>
+            <option value="culture">문화</option>
+            <option value="sports">운동</option>
+            <option value="volunteer">봉사</option>
+          </select>
+        </label>
+        <label>
+          모집 대상
+          <input type="text" name="targetText" placeholder="예: 개발 입문자부터 프로젝트 경험자까지" required>
+        </label>
+        <label>
+          활동 시간
+          <input type="text" name="activityTime" placeholder="예: 목요일 18:30, 공학관 세미나실" required>
+        </label>
+        <label>
+          활동요일
+          <input type="text" name="activityDays" placeholder="예: 목 또는 화 토" required>
+        </label>
+        <label>
+          모집 인원
+          <input type="text" name="capacity" placeholder="예: 15명" required>
+        </label>
+        <label>
+          마감일
+          <input type="date" name="deadlineDate" required>
+        </label>
+        <label class="full">
+          모집 소개
+          <textarea name="description" rows="5" placeholder="동아리 활동과 모집 내용을 소개해주세요." required></textarea>
+        </label>
+        <button class="primary-button full" type="submit">모집 공고 등록</button>
+        <p class="form-message" id="clubPostMessage" role="status"></p>
+      </form>
+    </section>
+
+    <section class="application-card mypage-guard" id="postGuard" hidden>
+      <h2>로그인이 필요합니다</h2>
+      <p>모집 공고를 올리려면 먼저 로그인해주세요.</p>
+      <a class="primary-button" href="login.html?return=post.html">로그인하러 가기</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>동아리픽</strong>
+    <span>우리 학교 동아리 정보를 가장 빠르게 확인하세요.</span>
+  </footer>
+
+  <script src="header-auth.js"></script>
+  <script src="post.js"></script>
+</body>
+</html>

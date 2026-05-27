@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이페이지 | 동아리픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="우리학교 동아리픽 홈">
+        <span class="brand-mark">C</span>
+        <span>동아리픽</span>
+      </a>
+      <nav class="top-nav" aria-label="주요 메뉴">
+        <a href="index.html#clubs">동아리</a>
+        <a href="index.html#process">가입 안내</a>
+        <a href="index.html#faq">FAQ</a>
+      </nav>
+      <div class="header-actions" data-auth-state>
+        <a class="header-login" href="login.html" data-auth-login-link>로그인</a>
+        <a class="user-chip" href="mypage.html" data-auth-user hidden></a>
+        <button class="header-logout" type="button" data-auth-logout hidden>로그아웃</button>
+        <a class="header-cta" href="clubs.html">모집 공고</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="mypage">
+    <section class="mypage-hero">
+      <p class="eyebrow">My Page</p>
+      <h1>내 회원정보</h1>
+      <p class="hero-description">회원가입할 때 입력한 정보를 확인하고 동아리 신청을 이어갈 수 있습니다.</p>
+    </section>
+
+    <section class="mypage-card" id="mypageContent" hidden>
+      <div class="profile-summary">
+        <div class="profile-avatar" data-profile-initial>U</div>
+        <div>
+          <h2 data-profile-name>사용자</h2>
+          <p data-profile-email>이메일 정보 없음</p>
+        </div>
+      </div>
+
+      <dl class="profile-list">
+        <div>
+          <dt>이름</dt>
+          <dd data-profile-name-detail>-</dd>
+        </div>
+        <div>
+          <dt>학번</dt>
+          <dd data-profile-student-id>-</dd>
+        </div>
+        <div>
+          <dt>이메일</dt>
+          <dd data-profile-email-detail>-</dd>
+        </div>
+      </dl>
+
+      <div class="mypage-actions">
+        <button class="primary-button" type="button" id="showMyApplicationsButton">내가 지원한 동아리 보기</button>
+        <a class="secondary-button" href="post.html">동아리 모집 공고 올리기</a>
+      </div>
+    </section>
+
+    <section class="mypage-card received-section" id="myApplicationsSection" hidden>
+      <div class="section-heading compact-heading">
+        <div>
+          <p class="eyebrow">My Applications</p>
+          <h2>내가 지원한 동아리</h2>
+        </div>
+      </div>
+      <div class="received-list" id="myApplicationsList"></div>
+      <p class="empty-search-message" id="myApplicationsEmpty">아직 지원한 동아리가 없습니다.</p>
+    </section>
+
+    <section class="mypage-card received-section" id="receivedApplicationsSection" hidden>
+      <div class="section-heading compact-heading">
+        <div>
+          <p class="eyebrow">Received Applications</p>
+          <h2>받은 지원서</h2>
+        </div>
+        <p id="managedClubText"></p>
+      </div>
+      <div class="received-list" id="receivedApplicationsList"></div>
+      <p class="empty-search-message" id="receivedApplicationsEmpty">아직 확인할 수 있는 지원서가 없습니다.</p>
+    </section>
+
+    <section class="mypage-card mypage-guard" id="mypageGuard" hidden>
+      <h2>로그인이 필요합니다</h2>
+      <p>마이페이지는 로그인한 사용자만 볼 수 있습니다.</p>
+      <a class="primary-button" href="login.html?return=mypage.html">로그인하러 가기</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>동아리픽</strong>
+    <span>우리 학교 동아리 정보를 가장 빠르게 확인하세요.</span>
+  </footer>
+
+  <script src="header-auth.js"></script>
+  <script src="mypage.js"></script>
+</body>
+</html>

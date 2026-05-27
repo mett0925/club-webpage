@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리학교 동아리픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="우리학교 동아리픽 홈">
+        <span class="brand-mark">C</span>
+        <span>동아리픽</span>
+      </a>
+      <nav class="top-nav" aria-label="주요 메뉴">
+        <a href="#clubs">동아리</a>
+        <a href="#process">가입 안내</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="header-actions" data-auth-state>
+        <a class="header-login" href="login.html" data-auth-login-link>로그인</a>
+        <a class="user-chip" href="mypage.html" data-auth-user hidden></a>
+        <button class="header-logout" type="button" data-auth-logout hidden>로그아웃</button>
+        <a class="header-cta" href="clubs.html">모집 공고</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">우리 학교 동아리 모집 플랫폼</p>
+        <h1>관심 있는 동아리를 찾고, 바로 가입 신청하세요.</h1>
+        <p class="hero-description">
+          학술, 공연, 봉사, 운동까지 우리 학교에서 활동 중인 동아리를 한곳에서 확인하고
+          모집 중인 동아리에 간편하게 지원할 수 있습니다.
+        </p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#clubs">동아리 둘러보기</a>
+          <a class="secondary-button" href="clubs.html">모집 공고 보기</a>
+        </div>
+      </div>
+      <aside class="hero-card" aria-label="이번 주 인기 동아리">
+        <div class="hero-card-header">
+          <span>이번 주 인기</span>
+          <strong>모집중</strong>
+        </div>
+        <article class="spotlight">
+          <span class="category">IT/개발</span>
+          <h2>CodeMate</h2>
+          <p>웹 서비스 제작과 해커톤을 함께 준비하는 개발 동아리</p>
+          <div class="spotlight-meta">
+            <span>지원 42명</span>
+            <span>~ 6/12 마감</span>
+          </div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="stats" aria-label="서비스 현황">
+      <div>
+        <strong>24</strong>
+        <span>등록 동아리</span>
+      </div>
+      <div>
+        <strong>8</strong>
+        <span>현재 모집중</span>
+      </div>
+      <div>
+        <strong>312</strong>
+        <span>누적 신청</span>
+      </div>
+    </section>
+
+    <section id="clubs" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Club Recruit</p>
+          <h2>동아리 모집 공고</h2>
+        </div>
+        <div class="filter-tabs" aria-label="동아리 분야 필터">
+          <button class="filter-button active" type="button" data-filter="all">전체</button>
+          <button class="filter-button" type="button" data-filter="study">학술</button>
+          <button class="filter-button" type="button" data-filter="culture">문화</button>
+          <button class="filter-button" type="button" data-filter="sports">운동</button>
+          <button class="filter-button" type="button" data-filter="volunteer">봉사</button>
+        </div>
+      </div>
+
+      <div class="club-grid">
+        <article class="club-card" data-category="study">
+          <div class="card-top">
+            <span class="badge">학술</span>
+            <span class="deadline">D-12</span>
+          </div>
+          <h3>CodeMate</h3>
+          <p>프론트엔드, 백엔드, 디자인 팀이 함께 캠퍼스 서비스를 만드는 개발 동아리입니다.</p>
+          <ul>
+            <li>매주 목요일 18:30 정기 세션</li>
+            <li>신입 대상 Git/React 스터디 운영</li>
+          </ul>
+          <button class="apply-button" type="button" data-club="CodeMate">지원하기</button>
+        </article>
+
+        <article class="club-card" data-category="culture">
+          <div class="card-top">
+            <span class="badge">문화</span>
+            <span class="deadline">D-9</span>
+          </div>
+          <h3>Frame</h3>
+          <p>사진 촬영, 전시 기획, 포토워크를 함께하는 시각예술 동아리입니다.</p>
+          <ul>
+            <li>월 1회 캠퍼스 출사</li>
+            <li>학기 말 작은 사진전 개최</li>
+          </ul>
+          <button class="apply-button" type="button" data-club="Frame">지원하기</button>
+        </article>
+
+        <article class="club-card" data-category="sports">
+          <div class="card-top">
+            <span class="badge">운동</span>
+            <span class="deadline">D-6</span>
+          </div>
+          <h3>RunWave</h3>
+          <p>초보자도 함께 달릴 수 있는 러닝 크루형 운동 동아리입니다.</p>
+          <ul>
+            <li>화/토 저녁 캠퍼스 러닝</li>
+            <li>5km 완주 프로그램 진행</li>
+          </ul>
+          <button class="apply-button" type="button" data-club="RunWave">지원하기</button>
+        </article>
+
+        <article class="club-card" data-category="volunteer">
+          <div class="card-top">
+            <span class="badge">봉사</span>
+            <span class="deadline">D-15</span>
+          </div>
+          <h3>Warm Hand</h3>
+          <p>지역 아동센터 학습 멘토링과 캠퍼스 나눔 캠페인을 운영합니다.</p>
+          <ul>
+            <li>격주 토요일 멘토링</li>
+            <li>봉사 시간 인증 가능</li>
+          </ul>
+          <button class="apply-button" type="button" data-club="Warm Hand">지원하기</button>
+        </article>
+      </div>
+
+      <div class="more-clubs">
+        <a class="secondary-button more-clubs-button" href="clubs.html">
+          모집 공고 더보기
+        </a>
+        <p>현재 모집 중인 동아리 12개를 더 자세히 확인할 수 있어요.</p>
+      </div>
+    </section>
+
+    <section id="process" class="section split-section">
+      <div>
+        <p class="eyebrow">How To Join</p>
+        <h2>가입 절차는 간단해요</h2>
+        <p class="section-description">
+          원하는 동아리를 고르고 신청서를 제출하면, 동아리 운영진이 확인 후 면접 또는 OT 일정을 안내합니다.
+        </p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <strong>01</strong>
+          <span>동아리 탐색</span>
+          <p>분야와 활동 내용을 비교해 내 관심사에 맞는 동아리를 찾습니다.</p>
+        </div>
+        <div class="step">
+          <strong>02</strong>
+          <span>신청서 작성</span>
+          <p>학번, 연락처, 지원 동기 등 기본 정보를 입력합니다.</p>
+        </div>
+        <div class="step">
+          <strong>03</strong>
+          <span>운영진 연락</span>
+          <p>제출 후 3일 이내에 담당자가 다음 일정을 안내합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section faq-section">
+      <p class="eyebrow">FAQ</p>
+      <h2>자주 묻는 질문</h2>
+      <details>
+        <summary>여러 동아리에 동시에 지원할 수 있나요?</summary>
+        <p>가능합니다. 단, 동아리별 활동 요일과 면접 일정을 확인한 뒤 지원하는 것을 추천합니다.</p>
+      </details>
+      <details>
+        <summary>신입생이 아니어도 가입할 수 있나요?</summary>
+        <p>대부분의 동아리는 재학생 누구나 지원할 수 있으며, 일부 동아리는 모집 대상이 다를 수 있습니다.</p>
+      </details>
+      <details>
+        <summary>신청 내역은 어디서 확인하나요?</summary>
+        <p>현재 예시는 프론트엔드 화면만 구현되어 있습니다. 실제 서비스에서는 로그인과 신청 내역 페이지를 연결하면 됩니다.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>동아리픽</strong>
+    <span>우리 학교 동아리 정보를 가장 빠르게 확인하세요.</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

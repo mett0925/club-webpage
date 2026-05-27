@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입 | 동아리픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-body signup-body">
+  <main class="auth-page">
+    <a class="auth-logo" href="index.html" aria-label="우리학교 동아리픽 홈">
+      <span class="brand-mark">C</span>
+      <span>동아리픽</span>
+    </a>
+    <section class="section auth-section">
+      <div class="auth-copy">
+        <p class="eyebrow">Create Account</p>
+        <h1>회원가입하고 동아리 신청을 시작하세요.</h1>
+        <p>이메일 인증번호를 확인한 뒤 가입하면 MySQL users 테이블에 회원정보가 저장됩니다.</p>
+      </div>
+
+      <div class="auth-panel auth-panel-single">
+        <form class="auth-form" id="signupForm">
+          <h3>회원가입</h3>
+          <label>
+            이름
+            <input type="text" name="name" placeholder="홍길동" required>
+          </label>
+          <label>
+            이메일
+            <div class="verification-row">
+              <input type="email" name="email" id="emailInput" placeholder="student@example.com" required>
+              <button class="secondary-button verification-button" type="button" id="sendCodeButton">인증번호 받기</button>
+            </div>
+          </label>
+          <label>
+            이메일 인증번호
+            <input type="text" name="verificationCode" id="verificationCodeInput" placeholder="6자리 인증번호" inputmode="numeric" maxlength="6" required>
+          </label>
+          <label>
+            학번
+            <input type="text" name="studentId" placeholder="20261234" inputmode="numeric" required>
+          </label>
+          <label>
+            비밀번호
+            <div class="password-field">
+              <input type="password" name="password" placeholder="6자 이상" minlength="6" required>
+              <button class="password-toggle" type="button" aria-label="비밀번호 표시" data-password-toggle>👁</button>
+            </div>
+          </label>
+          <button class="primary-button" type="submit">회원가입</button>
+          <p class="form-message auth-message" id="signupMessage" role="status"></p>
+          <div class="auth-switch">
+            <span>이미 계정이 있나요?</span>
+            <a class="secondary-button" id="loginLink" href="login.html">로그인하기</a>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="signup.js"></script>
+</body>
+</html>
