@@ -211,6 +211,16 @@ function getSessionUser(request) {
   return session.user;
 }
 
+function updateSessionUser(request, user) {
+  const cookies = parseCookies(request.headers.cookie);
+  const sessionId = cookies[SESSION_COOKIE_NAME];
+  const session = sessionId ? sessions.get(sessionId) : null;
+
+  if (session) {
+    session.user = user;
+  }
+}
+
 function createSession(response, user) {
   const sessionId = crypto.randomBytes(32).toString("hex");
   sessions.set(sessionId, { user, createdAt: Date.now() });
@@ -239,6 +249,7 @@ function getPublicUser(user) {
     name: user.name,
     studentId: user.studentId,
     email: user.email,
+    birthDate: user.birthDate,
   };
 }
 
@@ -274,12 +285,14 @@ async function getDbPool() {
       id CHAR(36) PRIMARY KEY,
       name VARCHAR(50) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
+      birth_date DATE NULL,
       student_id VARCHAR(12) NOT NULL UNIQUE,
       password_hash VARCHAR(255) NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
   await ensureUsersEmailColumn(dbPool);
+  await ensureUsersBirthDateColumn(dbPool);
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS applications (
       id CHAR(36) PRIMARY KEY,
@@ -334,6 +347,21 @@ async function ensureUsersEmailColumn(pool) {
   await pool.query("CREATE UNIQUE INDEX users_email_unique ON users (email)");
 }
 
+async function ensureUsersBirthDateColumn(pool) {
+  const [columns] = await pool.execute(
+    `SELECT COLUMN_NAME
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users' AND COLUMN_NAME = 'birth_date'`,
+    [DB_NAME]
+  );
+
+  if (columns.length > 0) {
+    return;
+  }
+
+  await pool.query("ALTER TABLE users ADD COLUMN birth_date DATE NULL AFTER email");
+}
+
 async function findUserByStudentId(studentId) {
   const pool = await getDbPool();
   const [rows] = await pool.execute(
@@ -341,6 +369,7 @@ async function findUserByStudentId(studentId) {
       id,
       name,
       email,
+      birth_date AS birthDate,
       student_id AS studentId,
       password_hash AS passwordHash,
       created_at AS createdAt
@@ -360,6 +389,7 @@ async function findUserByEmail(email) {
       id,
       name,
       email,
+      birth_date AS birthDate,
       student_id AS studentId,
       password_hash AS passwordHash,
       created_at AS createdAt
@@ -372,12 +402,41 @@ async function findUserByEmail(email) {
   return rows[0] || null;
 }
 
+async function updateUserProfile(userId, profile) {
+  const pool = await getDbPool();
+  const passwordHash = profile.password ? hashPassword(profile.password) : null;
+
+  if (passwordHash) {
+    await pool.execute(
+      `UPDATE users
+      SET name = ?, email = ?, birth_date = ?, student_id = ?, password_hash = ?
+      WHERE id = ?`,
+      [profile.name, profile.email, profile.birthDate, profile.studentId, passwordHash, userId]
+    );
+  } else {
+    await pool.execute(
+      `UPDATE users
+      SET name = ?, email = ?, birth_date = ?, student_id = ?
+      WHERE id = ?`,
+      [profile.name, profile.email, profile.birthDate, profile.studentId, userId]
+    );
+  }
+
+  return {
+    id: userId,
+    name: profile.name,
+    email: profile.email,
+    birthDate: profile.birthDate,
+    studentId: profile.studentId,
+  };
+}
+
 async function createUser(user) {
   const pool = await getDbPool();
 
   await pool.execute(
-    "INSERT INTO users (id, name, email, student_id, password_hash) VALUES (?, ?, ?, ?, ?)",
-    [user.id, user.name, user.email, user.studentId, user.passwordHash]
+    "INSERT INTO users (id, name, email, birth_date, student_id, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+    [user.id, user.name, user.email, user.birthDate, user.studentId, user.passwordHash]
   );
 }
 
@@ -431,7 +490,7 @@ async function getApplicationsByClubNames(clubNames) {
   return rows;
 }
 
-async function getApplicationsByUserId(userId) {
+async function getApplicationsByUserId(userId, studentId) {
   const pool = await getDbPool();
   const [rows] = await pool.execute(
     `SELECT
@@ -441,12 +500,45 @@ async function getApplicationsByUserId(userId) {
       motivation,
       created_at AS createdAt
     FROM applications
-    WHERE applicant_user_id = ?
+    WHERE applicant_user_id = ? OR applicant_student_id = ?
     ORDER BY created_at DESC`,
-    [userId]
+    [userId, studentId]
   );
 
   return rows;
+}
+
+async function updateApplication(applicationId, applicantUserId, applicantStudentId, application) {
+  const pool = await getDbPool();
+  const [result] = await pool.execute(
+    `UPDATE applications
+    SET
+      club_name = ?,
+      phone = ?,
+      motivation = ?
+    WHERE id = ? AND (applicant_user_id = ? OR applicant_student_id = ?)`,
+    [
+      application.clubName,
+      application.phone,
+      application.motivation,
+      applicationId,
+      applicantUserId,
+      applicantStudentId,
+    ]
+  );
+
+  return result.affectedRows > 0;
+}
+
+async function deleteApplication(applicationId, applicantUserId, applicantStudentId) {
+  const pool = await getDbPool();
+  const [result] = await pool.execute(
+    `DELETE FROM applications
+    WHERE id = ? AND (applicant_user_id = ? OR applicant_student_id = ?)`,
+    [applicationId, applicantUserId, applicantStudentId]
+  );
+
+  return result.affectedRows > 0;
 }
 
 async function createClubPost(post) {
@@ -530,19 +622,69 @@ async function getClubPostById(id) {
   return rows[0] || null;
 }
 
-async function getClubPostsByOwner(userId) {
+async function updateClubPost(postId, ownerUserId, ownerStudentId, post) {
+  const pool = await getDbPool();
+  const [result] = await pool.execute(
+    `UPDATE club_posts
+    SET
+      club_name = ?,
+      category = ?,
+      description = ?,
+      target_text = ?,
+      activity_time = ?,
+      activity_days = ?,
+      capacity = ?,
+      deadline_date = ?
+    WHERE id = ? AND (owner_user_id = ? OR owner_student_id = ?)`,
+    [
+      post.clubName,
+      post.category,
+      post.description,
+      post.targetText,
+      post.activityTime,
+      post.activityDays,
+      post.capacity,
+      post.deadlineDate,
+      postId,
+      ownerUserId,
+      ownerStudentId,
+    ]
+  );
+
+  return result.affectedRows > 0;
+}
+
+async function deleteClubPost(postId, ownerUserId, ownerStudentId) {
+  const pool = await getDbPool();
+  const [result] = await pool.execute(
+    `DELETE FROM club_posts
+    WHERE id = ? AND (owner_user_id = ? OR owner_student_id = ?)`,
+    [postId, ownerUserId, ownerStudentId]
+  );
+
+  return result.affectedRows > 0;
+}
+
+async function getClubPostsByOwner(userId, studentId) {
   const pool = await getDbPool();
   const [rows] = await pool.execute(
     `SELECT
       id,
+      owner_user_id AS ownerUserId,
+      owner_student_id AS ownerStudentId,
       club_name AS clubName,
       category,
+      description,
+      target_text AS targetText,
+      activity_time AS activityTime,
+      activity_days AS activityDays,
+      capacity,
       deadline_date AS deadlineDate,
       created_at AS createdAt
     FROM club_posts
-    WHERE owner_user_id = ?
+    WHERE owner_user_id = ? OR owner_student_id = ?
     ORDER BY created_at DESC`,
-    [userId]
+    [userId, studentId]
   );
 
   return rows;
@@ -550,23 +692,137 @@ async function getClubPostsByOwner(userId) {
 
 async function getManagedClubNames(user) {
   const envManagedClubNames = CLUB_NAMES.filter((clubName) => getClubOwnerStudentId(clubName) === user.studentId);
-  const ownedPosts = await getClubPostsByOwner(user.id);
+  const ownedPosts = await getClubPostsByOwner(user.id, user.studentId);
   const postClubNames = ownedPosts.map((post) => post.clubName);
 
   return [...new Set([...envManagedClubNames, ...postClubNames])];
 }
 
-function validateCredentials(name, email, studentId, password) {
-  if (!name || !email || !studentId || !password) {
-    return "이름, 이메일, 학번, 비밀번호를 모두 입력해주세요.";
+async function getAvailableClubNames() {
+  const clubPosts = await getClubPosts();
+  const dynamicClubNames = clubPosts.map((post) => post.clubName);
+
+  return [...new Set([...CLUB_NAMES, ...dynamicClubNames])];
+}
+
+function normalizeApplicationInput(input) {
+  const { clubName = "", phone = "", motivation = "" } = input;
+  const application = {
+    clubName: String(clubName).trim(),
+    phone: String(phone).trim(),
+    motivation: String(motivation).trim(),
+  };
+
+  if (!application.clubName) {
+    return { error: "지원할 동아리를 올바르게 선택해주세요." };
+  }
+
+  if (!application.phone || !application.motivation) {
+    return { error: "연락처와 지원 동기를 입력해주세요." };
+  }
+
+  return { application };
+}
+
+function normalizeClubPostInput(input) {
+  const {
+    clubName = "",
+    category = "",
+    description = "",
+    targetText = "",
+    activityTime = "",
+    activityDays = "",
+    capacity = "",
+    deadlineDate = "",
+  } = input;
+  const post = {
+    clubName: String(clubName).trim(),
+    category: String(category).trim(),
+    description: String(description).trim(),
+    targetText: String(targetText).trim(),
+    activityTime: String(activityTime).trim(),
+    activityDays: String(activityDays).trim(),
+    capacity: String(capacity).trim(),
+    deadlineDate: String(deadlineDate).trim(),
+  };
+
+  if (
+    !post.clubName ||
+    !post.category ||
+    !post.description ||
+    !post.targetText ||
+    !post.activityTime ||
+    !post.activityDays ||
+    !post.capacity ||
+    !post.deadlineDate
+  ) {
+    return { error: "모집 공고 내용을 모두 입력해주세요." };
+  }
+
+  if (!["study", "culture", "sports", "volunteer"].includes(post.category)) {
+    return { error: "분야를 올바르게 선택해주세요." };
+  }
+
+  return { post };
+}
+
+function isValidBirthDate(birthDate) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    return false;
+  }
+
+  const date = new Date(`${birthDate}T00:00:00`);
+
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === birthDate;
+}
+
+function validateProfileInput(name, email, birthDate, studentId, password = "", passwordConfirm = "") {
+  if (!name || !email || !birthDate || !studentId) {
+    return "이름, 이메일, 생년월일, 학번을 모두 입력해주세요.";
   }
 
   if (!isValidEmail(email)) {
     return "올바른 이메일 주소를 입력해주세요.";
   }
 
+  if (!isValidBirthDate(birthDate)) {
+    return "생년월일을 올바르게 입력해주세요.";
+  }
+
   if (!/^\d{4,12}$/.test(studentId)) {
     return "학번은 숫자 4~12자리로 입력해주세요.";
+  }
+
+  if ((password || passwordConfirm) && password !== passwordConfirm) {
+    return "새 비밀번호와 비밀번호 확인이 일치하지 않습니다.";
+  }
+
+  if (password && password.length < 6) {
+    return "새 비밀번호는 6자 이상이어야 합니다.";
+  }
+
+  return "";
+}
+
+function validateCredentials(name, email, birthDate, studentId, password, passwordConfirm) {
+  if (!name || !email || !birthDate || !studentId || !password || !passwordConfirm) {
+    return "이름, 이메일, 생년월일, 학번, 비밀번호를 모두 입력해주세요.";
+  }
+
+  if (!isValidEmail(email)) {
+    return "올바른 이메일 주소를 입력해주세요.";
+  }
+
+  if (!isValidBirthDate(birthDate)) {
+    return "생년월일을 올바르게 입력해주세요.";
+  }
+
+  if (!/^\d{4,12}$/.test(studentId)) {
+    return "학번은 숫자 4~12자리로 입력해주세요.";
+  }
+
+  if (password !== passwordConfirm) {
+    return "비밀번호와 비밀번호 확인이 일치하지 않습니다.";
   }
 
   if (password.length < 6) {
@@ -582,6 +838,70 @@ async function handleApiRequest(request, response, pathname) {
       const user = getSessionUser(request);
 
       sendJson(response, 200, { user });
+      return true;
+    }
+
+    if (request.method === "POST" && pathname === "/api/send-profile-verification") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { message: "로그인이 필요합니다." });
+        return true;
+      }
+
+      const normalizedEmail = normalizeEmail(user.email);
+
+      if (!isValidEmail(normalizedEmail)) {
+        sendJson(response, 400, { message: "현재 계정 이메일이 올바르지 않습니다." });
+        return true;
+      }
+
+      const code = createVerificationCode();
+      emailVerifications.set(normalizedEmail, {
+        code,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      });
+
+      try {
+        await sendVerificationEmail(normalizedEmail, code);
+      } catch (error) {
+        console.error("이메일 인증번호 발송 실패:", error.message);
+        emailVerifications.delete(normalizedEmail);
+        sendJson(response, 400, {
+          message: "이메일 발송에 실패했습니다. SMTP 계정과 앱 비밀번호를 확인해주세요.",
+        });
+        return true;
+      }
+
+      sendJson(response, 200, { message: "현재 계정 이메일로 인증번호를 보냈습니다. 5분 안에 입력해주세요." });
+      return true;
+    }
+
+    if (request.method === "POST" && pathname === "/api/verify-profile-access") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { message: "로그인이 필요합니다." });
+        return true;
+      }
+
+      const { verificationCode = "" } = await readRequestBody(request);
+      const normalizedEmail = normalizeEmail(user.email);
+      const normalizedVerificationCode = String(verificationCode).trim();
+      const verification = emailVerifications.get(normalizedEmail);
+
+      if (!verification || verification.expiresAt < Date.now()) {
+        emailVerifications.delete(normalizedEmail);
+        sendJson(response, 400, { message: "이메일 인증번호를 먼저 받아주세요." });
+        return true;
+      }
+
+      if (verification.code !== normalizedVerificationCode) {
+        sendJson(response, 400, { message: "이메일 인증번호가 올바르지 않습니다." });
+        return true;
+      }
+
+      sendJson(response, 200, { message: "이메일 인증이 완료되었습니다." });
       return true;
     }
 
@@ -623,13 +943,30 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "POST" && pathname === "/api/signup") {
-      const { name = "", email = "", verificationCode = "", studentId = "", password = "" } = await readRequestBody(request);
+      const {
+        name = "",
+        email = "",
+        verificationCode = "",
+        birthDate = "",
+        studentId = "",
+        password = "",
+        passwordConfirm = "",
+      } = await readRequestBody(request);
       const normalizedName = String(name).trim();
       const normalizedEmail = normalizeEmail(email);
       const normalizedVerificationCode = String(verificationCode).trim();
+      const normalizedBirthDate = String(birthDate).trim();
       const normalizedStudentId = String(studentId).trim();
       const normalizedPassword = String(password);
-      const validationMessage = validateCredentials(normalizedName, normalizedEmail, normalizedStudentId, normalizedPassword);
+      const normalizedPasswordConfirm = String(passwordConfirm);
+      const validationMessage = validateCredentials(
+        normalizedName,
+        normalizedEmail,
+        normalizedBirthDate,
+        normalizedStudentId,
+        normalizedPassword,
+        normalizedPasswordConfirm
+      );
 
       if (validationMessage) {
         sendJson(response, 400, { message: validationMessage });
@@ -667,6 +1004,7 @@ async function handleApiRequest(request, response, pathname) {
         id: crypto.randomUUID(),
         name: normalizedName,
         email: normalizedEmail,
+        birthDate: normalizedBirthDate,
         studentId: normalizedStudentId,
         passwordHash: hashPassword(normalizedPassword),
         createdAt: new Date().toISOString(),
@@ -703,6 +1041,100 @@ async function handleApiRequest(request, response, pathname) {
       return true;
     }
 
+    if (request.method === "PUT" && pathname === "/api/me") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { message: "로그인이 필요합니다." });
+        return true;
+      }
+
+      const {
+        name = "",
+        email = "",
+        verificationCode = "",
+        birthDate = "",
+        studentId = "",
+        password = "",
+        passwordConfirm = "",
+      } = await readRequestBody(request);
+      const normalizedName = String(name).trim();
+      const normalizedEmail = normalizeEmail(email);
+      const normalizedVerificationCode = String(verificationCode).trim();
+      const normalizedBirthDate = String(birthDate).trim();
+      const normalizedStudentId = String(studentId).trim();
+      const normalizedPassword = String(password);
+      const normalizedPasswordConfirm = String(passwordConfirm);
+      const validationMessage = validateProfileInput(
+        normalizedName,
+        normalizedEmail,
+        normalizedBirthDate,
+        normalizedStudentId,
+        normalizedPassword,
+        normalizedPasswordConfirm
+      );
+
+      if (validationMessage) {
+        sendJson(response, 400, { message: validationMessage });
+        return true;
+      }
+
+      const profileAccessEmail = normalizeEmail(user.email);
+      const verification = emailVerifications.get(profileAccessEmail);
+
+      if (!verification || verification.expiresAt < Date.now()) {
+        emailVerifications.delete(profileAccessEmail);
+        sendJson(response, 400, { message: "회원정보 수정 페이지 입장 인증을 먼저 완료해주세요." });
+        return true;
+      }
+
+      if (verification.code !== normalizedVerificationCode) {
+        sendJson(response, 400, { message: "이메일 인증번호가 올바르지 않습니다." });
+        return true;
+      }
+
+      const emailExists = await findUserByEmail(normalizedEmail);
+
+      if (emailExists && emailExists.id !== user.id) {
+        sendJson(response, 409, { message: "이미 다른 계정에서 사용 중인 이메일입니다." });
+        return true;
+      }
+
+      const studentIdExists = await findUserByStudentId(normalizedStudentId);
+
+      if (studentIdExists && studentIdExists.id !== user.id) {
+        sendJson(response, 409, { message: "이미 다른 계정에서 사용 중인 학번입니다." });
+        return true;
+      }
+
+      const updatedUser = await updateUserProfile(user.id, {
+        name: normalizedName,
+        email: normalizedEmail,
+        birthDate: normalizedBirthDate,
+        studentId: normalizedStudentId,
+        password: normalizedPassword,
+      });
+      const publicUser = getPublicUser(updatedUser);
+      updateSessionUser(request, publicUser);
+      emailVerifications.delete(profileAccessEmail);
+
+      sendJson(response, 200, { user: publicUser, message: "회원정보가 수정되었습니다." });
+      return true;
+    }
+
+    if (request.method === "GET" && pathname === "/api/club-posts/mine") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { message: "로그인이 필요합니다." });
+        return true;
+      }
+
+      const posts = await getClubPostsByOwner(user.id, user.studentId);
+      sendJson(response, 200, { posts });
+      return true;
+    }
+
     if (request.method === "GET" && pathname === "/api/club-posts") {
       const parsedUrl = new URL(request.url, `http://localhost:${START_PORT}`);
       const id = parsedUrl.searchParams.get("id");
@@ -732,41 +1164,10 @@ async function handleApiRequest(request, response, pathname) {
         return true;
       }
 
-      const {
-        clubName = "",
-        category = "",
-        description = "",
-        targetText = "",
-        activityTime = "",
-        activityDays = "",
-        capacity = "",
-        deadlineDate = "",
-      } = await readRequestBody(request);
-      const normalizedClubName = String(clubName).trim();
-      const normalizedCategory = String(category).trim();
-      const normalizedDescription = String(description).trim();
-      const normalizedTargetText = String(targetText).trim();
-      const normalizedActivityTime = String(activityTime).trim();
-      const normalizedActivityDays = String(activityDays).trim();
-      const normalizedCapacity = String(capacity).trim();
-      const normalizedDeadlineDate = String(deadlineDate).trim();
+      const { post: postInput, error } = normalizeClubPostInput(await readRequestBody(request));
 
-      if (
-        !normalizedClubName ||
-        !normalizedCategory ||
-        !normalizedDescription ||
-        !normalizedTargetText ||
-        !normalizedActivityTime ||
-        !normalizedActivityDays ||
-        !normalizedCapacity ||
-        !normalizedDeadlineDate
-      ) {
-        sendJson(response, 400, { message: "모집 공고 내용을 모두 입력해주세요." });
-        return true;
-      }
-
-      if (!["study", "culture", "sports", "volunteer"].includes(normalizedCategory)) {
-        sendJson(response, 400, { message: "분야를 올바르게 선택해주세요." });
+      if (error) {
+        sendJson(response, 400, { message: error });
         return true;
       }
 
@@ -774,18 +1175,54 @@ async function handleApiRequest(request, response, pathname) {
         id: crypto.randomUUID(),
         ownerUserId: user.id,
         ownerStudentId: user.studentId,
-        clubName: normalizedClubName,
-        category: normalizedCategory,
-        description: normalizedDescription,
-        targetText: normalizedTargetText,
-        activityTime: normalizedActivityTime,
-        activityDays: normalizedActivityDays,
-        capacity: normalizedCapacity,
-        deadlineDate: normalizedDeadlineDate,
+        ...postInput,
       };
 
       await createClubPost(post);
       sendJson(response, 201, { post, message: "모집 공고가 등록되었습니다." });
+      return true;
+    }
+
+    const clubPostMatch = pathname.match(/^\/api\/club-posts\/([^/]+)\/?$/);
+
+    if ((request.method === "PUT" || request.method === "DELETE") && clubPostMatch) {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { message: "로그인이 필요합니다." });
+        return true;
+      }
+
+      const postId = decodeURIComponent(clubPostMatch[1]);
+
+      if (request.method === "DELETE") {
+        const deleted = await deleteClubPost(postId, user.id, user.studentId);
+
+        if (!deleted) {
+          sendJson(response, 404, { message: "삭제할 모집 공고를 찾을 수 없습니다." });
+          return true;
+        }
+
+        sendJson(response, 200, { message: "모집 공고가 삭제되었습니다." });
+        return true;
+      }
+
+      const { post: postInput, error } = normalizeClubPostInput(await readRequestBody(request));
+
+      if (error) {
+        sendJson(response, 400, { message: error });
+        return true;
+      }
+
+      const updated = await updateClubPost(postId, user.id, user.studentId, postInput);
+
+      if (!updated) {
+        sendJson(response, 404, { message: "수정할 모집 공고를 찾을 수 없습니다." });
+        return true;
+      }
+
+      const post = await getClubPostById(postId);
+      sendJson(response, 200, { post, message: "모집 공고가 수정되었습니다." });
       return true;
     }
 
@@ -797,33 +1234,26 @@ async function handleApiRequest(request, response, pathname) {
         return true;
       }
 
-      const { clubName = "", phone = "", motivation = "" } = await readRequestBody(request);
-      const normalizedClubName = String(clubName).trim();
-      const normalizedPhone = String(phone).trim();
-      const normalizedMotivation = String(motivation).trim();
+      const { application: applicationInput, error } = normalizeApplicationInput(await readRequestBody(request));
 
-      const clubPosts = await getClubPosts();
-      const dynamicClubNames = clubPosts.map((post) => post.clubName);
-      const availableClubNames = [...new Set([...CLUB_NAMES, ...dynamicClubNames])];
-
-      if (!availableClubNames.includes(normalizedClubName)) {
-        sendJson(response, 400, { message: "지원할 동아리를 올바르게 선택해주세요." });
+      if (error) {
+        sendJson(response, 400, { message: error });
         return true;
       }
 
-      if (!normalizedPhone || !normalizedMotivation) {
-        sendJson(response, 400, { message: "연락처와 지원 동기를 입력해주세요." });
+      const availableClubNames = await getAvailableClubNames();
+
+      if (!availableClubNames.includes(applicationInput.clubName)) {
+        sendJson(response, 400, { message: "지원할 동아리를 올바르게 선택해주세요." });
         return true;
       }
 
       const application = {
         id: crypto.randomUUID(),
-        clubName: normalizedClubName,
+        ...applicationInput,
         applicantUserId: user.id,
         applicantName: user.name,
         applicantStudentId: user.studentId,
-        phone: normalizedPhone,
-        motivation: normalizedMotivation,
       };
 
       await createApplication(application);
@@ -854,8 +1284,57 @@ async function handleApiRequest(request, response, pathname) {
         return true;
       }
 
-      const applications = await getApplicationsByUserId(user.id);
+      const applications = await getApplicationsByUserId(user.id, user.studentId);
       sendJson(response, 200, { applications });
+      return true;
+    }
+
+    const applicationMatch = pathname.match(/^\/api\/applications\/([^/]+)\/?$/);
+
+    if ((request.method === "PUT" || request.method === "DELETE") && applicationMatch) {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { message: "로그인이 필요합니다." });
+        return true;
+      }
+
+      const applicationId = decodeURIComponent(applicationMatch[1]);
+
+      if (request.method === "DELETE") {
+        const deleted = await deleteApplication(applicationId, user.id, user.studentId);
+
+        if (!deleted) {
+          sendJson(response, 404, { message: "삭제할 지원서를 찾을 수 없습니다." });
+          return true;
+        }
+
+        sendJson(response, 200, { message: "지원서가 삭제되었습니다." });
+        return true;
+      }
+
+      const { application: applicationInput, error } = normalizeApplicationInput(await readRequestBody(request));
+
+      if (error) {
+        sendJson(response, 400, { message: error });
+        return true;
+      }
+
+      const availableClubNames = await getAvailableClubNames();
+
+      if (!availableClubNames.includes(applicationInput.clubName)) {
+        sendJson(response, 400, { message: "지원할 동아리를 올바르게 선택해주세요." });
+        return true;
+      }
+
+      const updated = await updateApplication(applicationId, user.id, user.studentId, applicationInput);
+
+      if (!updated) {
+        sendJson(response, 404, { message: "수정할 지원서를 찾을 수 없습니다." });
+        return true;
+      }
+
+      sendJson(response, 200, { application: applicationInput, message: "지원서가 수정되었습니다." });
       return true;
     }
 
@@ -869,11 +1348,15 @@ async function handleApiRequest(request, response, pathname) {
 
 function getFilePath(requestUrl) {
   const parsedUrl = new URL(requestUrl, `http://localhost:${START_PORT}`);
-  const safePath = path.normalize(decodeURIComponent(parsedUrl.pathname)).replace(/^(\.\.[/\\])+/, "");
-  const requestedPath = safePath === "/" ? "/pages/index.html" : safePath;
-  const pagesPath = /^\/[^/]+\.html$/.test(requestedPath) ? `/pages${requestedPath}` : requestedPath;
+  const decodedPath = decodeURIComponent(parsedUrl.pathname);
+  const routedPath = decodedPath === "/"
+    ? "/pages/index.html"
+    : /^\/[^/]+\.html$/.test(decodedPath)
+      ? `/pages${decodedPath}`
+      : decodedPath;
+  const safePath = path.normalize(routedPath).replace(/^(\.\.[/\\])+/, "").replace(/^[/\\]+/, "");
 
-  return path.join(PUBLIC_DIR, pagesPath);
+  return path.join(PUBLIC_DIR, safePath);
 }
 
 function sendFile(response, filePath) {

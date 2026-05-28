@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원정보 수정 | 동아리픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="우리학교 동아리픽 홈">
+        <span class="brand-mark">C</span>
+        <span>동아리픽</span>
+      </a>
+      <nav class="top-nav" aria-label="주요 메뉴">
+        <a href="index.html#clubs">동아리</a>
+        <a href="index.html#process">가입 안내</a>
+        <a href="index.html#faq">FAQ</a>
+      </nav>
+      <div class="header-actions" data-auth-state>
+        <a class="header-login" href="login.html" data-auth-login-link>로그인</a>
+        <a class="user-chip" href="mypage.html" data-auth-user hidden></a>
+        <button class="header-logout" type="button" data-auth-logout hidden>로그아웃</button>
+        <a class="header-cta" href="clubs.html">모집 공고</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="apply-page">
+    <section class="apply-page-hero">
+      <a class="back-link" href="mypage.html">← 마이페이지로 돌아가기</a>
+      <p class="eyebrow">Edit Profile</p>
+      <h1>회원정보 수정</h1>
+      <p class="hero-description">현재 계정 이메일 인증을 완료해야 회원정보 수정 화면을 열 수 있습니다.</p>
+    </section>
+
+    <section class="application-card" id="profileVerification" hidden>
+      <div class="application-form">
+        <div class="application-user">
+          <strong data-profile-verification-name>사용자님</strong>
+          <span>인증번호는 현재 계정 이메일 <b data-profile-verification-email>-</b>로 발송됩니다.</span>
+        </div>
+        <button class="secondary-button" type="button" id="profileAccessSendCodeButton">인증번호 받기</button>
+        <label>
+          이메일 인증번호
+          <input type="text" id="profileAccessCodeInput" placeholder="6자리 인증번호" inputmode="numeric" maxlength="6" required>
+        </label>
+        <button class="primary-button" type="button" id="profileAccessVerifyButton">인증하고 수정 페이지 열기</button>
+        <p class="form-message" id="profileAccessMessage" role="status"></p>
+      </div>
+    </section>
+
+    <section class="application-card" id="profileContent" hidden>
+      <form class="application-form" id="profileForm">
+        <label>
+          이름
+          <input type="text" name="name" id="profileNameInput" placeholder="홍길동" required>
+        </label>
+        <label>
+          이메일
+          <input type="email" name="email" id="profileEmailInput" placeholder="student@example.com" required>
+          <input type="hidden" name="verificationCode" id="profileVerificationCodeInput">
+        </label>
+        <label>
+          생년월일
+          <input type="date" name="birthDate" id="profileBirthDateInput" required>
+        </label>
+        <label>
+          학번
+          <input type="text" name="studentId" id="profileStudentIdInput" placeholder="20261234" inputmode="numeric" required>
+        </label>
+        <label>
+          새 비밀번호
+          <div class="password-field">
+            <input type="password" name="password" id="profilePasswordInput" placeholder="변경할 때만 입력" minlength="6">
+            <button class="password-toggle" type="button" aria-label="비밀번호 표시" data-password-toggle>👁</button>
+          </div>
+        </label>
+        <label>
+          새 비밀번호 확인
+          <div class="password-field">
+            <input type="password" name="passwordConfirm" id="profilePasswordConfirmInput" placeholder="새 비밀번호 재입력" minlength="6">
+            <button class="password-toggle" type="button" aria-label="비밀번호 표시" data-password-toggle>👁</button>
+          </div>
+        </label>
+        <button class="primary-button" type="submit">회원정보 저장</button>
+        <p class="form-message" id="profileMessage" role="status"></p>
+      </form>
+    </section>
+
+    <section class="application-card mypage-guard" id="profileGuard" hidden>
+      <h2>로그인이 필요합니다</h2>
+      <p>회원정보를 수정하려면 먼저 로그인해주세요.</p>
+      <a class="primary-button" href="login.html?return=profile.html">로그인하러 가기</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>동아리픽</strong>
+    <span>우리 학교 동아리 정보를 가장 빠르게 확인하세요.</span>
+  </footer>
+
+  <script src="../scripts/header-auth.js?v=manage-20260528"></script>
+  <script src="../scripts/profile.js"></script>
+</body>
+</html>

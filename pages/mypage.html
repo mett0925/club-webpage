@@ -59,10 +59,16 @@
           <dt>이메일</dt>
           <dd data-profile-email-detail>-</dd>
         </div>
+        <div>
+          <dt>생년월일</dt>
+          <dd data-profile-birth-date>-</dd>
+        </div>
       </dl>
 
       <div class="mypage-actions">
+        <a class="primary-button" href="profile.html">회원정보 수정</a>
         <button class="primary-button" type="button" id="showMyApplicationsButton">내가 지원한 동아리 보기</button>
+        <button class="secondary-button" type="button" id="showMyPostsButton">내 모집 공고 관리</button>
         <a class="secondary-button" href="post.html">동아리 모집 공고 올리기</a>
       </div>
     </section>
@@ -76,6 +82,17 @@
       </div>
       <div class="received-list" id="myApplicationsList"></div>
       <p class="empty-search-message" id="myApplicationsEmpty">아직 지원한 동아리가 없습니다.</p>
+    </section>
+
+    <section class="mypage-card received-section" id="myPostsSection" hidden>
+      <div class="section-heading compact-heading">
+        <div>
+          <p class="eyebrow">My Recruit Posts</p>
+          <h2>내가 올린 모집 공고</h2>
+        </div>
+      </div>
+      <div class="received-list" id="myPostsList"></div>
+      <p class="empty-search-message" id="myPostsEmpty">아직 올린 모집 공고가 없습니다.</p>
     </section>
 
     <section class="mypage-card received-section" id="receivedApplicationsSection" hidden>
@@ -102,7 +119,7 @@
     <span>우리 학교 동아리 정보를 가장 빠르게 확인하세요.</span>
   </footer>
 
-  <script src="../scripts/header-auth.js"></script>
-  <script src="../scripts/mypage.js"></script>
+  <script src="../scripts/header-auth.js?v=manage-20260528"></script>
+  <script src="../scripts/mypage.js?v=manage-20260528"></script>
 </body>
 </html>

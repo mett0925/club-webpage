@@ -83,6 +83,13 @@ signupForm.addEventListener("submit", async (event) => {
   setMessage(signupMessage, "");
 
   const formData = new FormData(signupForm);
+  const password = formData.get("password");
+  const passwordConfirm = formData.get("passwordConfirm");
+
+  if (password !== passwordConfirm) {
+    setMessage(signupMessage, "비밀번호와 비밀번호 확인이 일치하지 않습니다.", true);
+    return;
+  }
 
   try {
     const payload = await requestJson("/api/signup", {

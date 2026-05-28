@@ -1259,6 +1259,25 @@ details p {
   white-space: pre-wrap;
 }
 
+.managed-post-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.danger-button {
+  color: #d33b3b;
+  border-color: rgba(211, 59, 59, 0.35);
+  background: #fff5f5;
+}
+
+.managed-post-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
 .split-section {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;

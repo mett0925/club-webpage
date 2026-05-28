@@ -7,6 +7,7 @@ const formMessage = document.querySelector("#formMessage");
 const authUser = document.querySelector("[data-auth-user]");
 const authLoginLink = document.querySelector("[data-auth-login-link]");
 const authLogoutButton = document.querySelector("[data-auth-logout]");
+const recruitCountText = document.querySelector("#recruitCountText");
 let currentUser = null;
 
 async function requestJson(url, options = {}) {
@@ -34,6 +35,29 @@ function setMessage(element, message, isError = false) {
 
   element.textContent = message;
   element.classList.toggle("is-error", isError);
+}
+
+function renderRecruitCount(count) {
+  if (!recruitCountText) {
+    return;
+  }
+
+  recruitCountText.textContent = `현재 모집 중인 동아리 ${count}개를 더 자세히 확인할 수 있어요.`;
+}
+
+async function loadRecruitCount() {
+  if (!recruitCountText) {
+    return;
+  }
+
+  const baseCount = Number(recruitCountText.dataset.baseCount) || 0;
+
+  try {
+    const { posts } = await requestJson("/api/club-posts");
+    renderRecruitCount(baseCount + posts.length);
+  } catch (error) {
+    renderRecruitCount(baseCount);
+  }
 }
 
 function fillApplyForm(user) {
@@ -169,3 +193,4 @@ if (applyForm) {
 }
 
 loadCurrentUser();
+loadRecruitCount();

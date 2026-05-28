@@ -41,6 +41,10 @@
             <input type="text" name="verificationCode" id="verificationCodeInput" placeholder="6자리 인증번호" inputmode="numeric" maxlength="6" required>
           </label>
           <label>
+            생년월일
+            <input type="date" name="birthDate" required>
+          </label>
+          <label>
             학번
             <input type="text" name="studentId" placeholder="20261234" inputmode="numeric" required>
           </label>
@@ -48,6 +52,13 @@
             비밀번호
             <div class="password-field">
               <input type="password" name="password" placeholder="6자 이상" minlength="6" required>
+              <button class="password-toggle" type="button" aria-label="비밀번호 표시" data-password-toggle>👁</button>
+            </div>
+          </label>
+          <label>
+            비밀번호 확인
+            <div class="password-field">
+              <input type="password" name="passwordConfirm" placeholder="비밀번호 재입력" minlength="6" required>
               <button class="password-toggle" type="button" aria-label="비밀번호 표시" data-password-toggle>👁</button>
             </div>
           </label>
