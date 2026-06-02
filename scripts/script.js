@@ -1,6 +1,5 @@
-const filterButtons = document.querySelectorAll(".filter-button");
-const clubCards = document.querySelectorAll(".club-card");
-const applyButtons = document.querySelectorAll(".apply-button");
+﻿const filterButtons = document.querySelectorAll(".filter-button");
+const clubGrid = document.querySelector(".club-grid");
 const clubSelect = document.querySelector("#clubSelect");
 const applyForm = document.querySelector("#applyForm");
 const formMessage = document.querySelector("#formMessage");
@@ -8,7 +7,13 @@ const authUser = document.querySelector("[data-auth-user]");
 const authLoginLink = document.querySelector("[data-auth-login-link]");
 const authLogoutButton = document.querySelector("[data-auth-logout]");
 const recruitCountText = document.querySelector("#recruitCountText");
+const homeApplicationCount = document.querySelector("#homeApplicationCount");
+const homeRegisteredClubCount = document.querySelector("#homeRegisteredClubCount");
+const homeRecruitSummaryCount = document.querySelector("#homeRecruitSummaryCount");
+const homeRecruitEmpty = document.querySelector("#homeRecruitEmpty");
 let currentUser = null;
+let clubCards = document.querySelectorAll(".club-card");
+let activeFilter = "all";
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, {
@@ -37,26 +42,128 @@ function setMessage(element, message, isError = false) {
   element.classList.toggle("is-error", isError);
 }
 
-function renderRecruitCount(count) {
-  if (!recruitCountText) {
-    return;
-  }
-
-  recruitCountText.textContent = `현재 모집 중인 동아리 ${count}개를 더 자세히 확인할 수 있어요.`;
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-async function loadRecruitCount() {
-  if (!recruitCountText) {
+function getCategoryLabel(category) {
+  const labels = {
+    study: "학술",
+    culture: "문화",
+    sports: "운동",
+    volunteer: "봉사",
+    performance: "공연",
+    startup: "창업",
+    media: "미디어",
+    religion: "종교",
+  };
+
+  return labels[category] || category;
+}
+
+function getDeadlineDays(deadlineDate) {
+  const today = new Date();
+  const deadline = new Date(deadlineDate);
+  today.setHours(0, 0, 0, 0);
+  deadline.setHours(0, 0, 0, 0);
+
+  return Math.max(0, Math.ceil((deadline - today) / (1000 * 60 * 60 * 24)));
+}
+
+function isActiveRecruitPost(post) {
+  const today = new Date();
+  const deadline = new Date(post.deadlineDate);
+  today.setHours(0, 0, 0, 0);
+  deadline.setHours(0, 0, 0, 0);
+  return deadline >= today;
+}
+
+function getRegisteredClubCount(posts) {
+  return new Set(posts.map((post) => post.clubName)).size;
+}
+
+function getActiveRecruitCount(posts) {
+  return posts.filter(isActiveRecruitPost).length;
+}
+
+function renderHomeStats(posts, applicationCount = 0) {
+  const registeredCount = getRegisteredClubCount(posts);
+  const activeRecruitCount = getActiveRecruitCount(posts);
+
+  if (homeRegisteredClubCount) {
+    homeRegisteredClubCount.textContent = String(registeredCount);
+  }
+
+  if (homeRecruitSummaryCount) {
+    homeRecruitSummaryCount.textContent = String(activeRecruitCount);
+  }
+
+  if (homeApplicationCount) {
+    homeApplicationCount.textContent = String(applicationCount);
+  }
+
+  if (recruitCountText) {
+    recruitCountText.textContent = `현재 모집 중인 동아리 ${activeRecruitCount}개를 더 자세히 확인할 수 있어요.`;
+  }
+}
+
+function renderHomeClubPost(post) {
+  const deadlineDays = getDeadlineDays(post.deadlineDate);
+  const article = document.createElement("article");
+  article.className = "club-card";
+  article.dataset.category = post.category;
+  article.innerHTML = `
+    <div class="card-top">
+      <span class="badge">${escapeHtml(getCategoryLabel(post.category))}</span>
+      <span class="deadline">D-${deadlineDays}</span>
+    </div>
+    <h3>${escapeHtml(post.clubName)}</h3>
+    <p>${escapeHtml(post.description)}</p>
+    <ul>
+      <li>${escapeHtml(post.targetText)}</li>
+      <li>${escapeHtml(post.activityTime)}</li>
+    </ul>
+    <button class="apply-button" type="button" data-club="${escapeHtml(post.clubName)}">지원하기</button>
+  `;
+  clubGrid.appendChild(article);
+}
+
+function applyHomeFilter() {
+  clubCards.forEach((card) => {
+    const shouldShow = activeFilter === "all" || card.dataset.category === activeFilter;
+    card.classList.toggle("is-hidden", !shouldShow);
+  });
+}
+
+async function loadRecruitPosts() {
+  if (!clubGrid) {
     return;
   }
 
-  const baseCount = Number(recruitCountText.dataset.baseCount) || 0;
-
   try {
-    const { posts } = await requestJson("/api/club-posts");
-    renderRecruitCount(baseCount + posts.length);
+    const [{ posts }, { count }] = await Promise.all([
+      requestJson("/api/club-posts"),
+      requestJson("/api/applications/count"),
+    ]);
+    const activePosts = posts.filter(isActiveRecruitPost);
+
+    clubGrid.innerHTML = "";
+    activePosts.slice(0, 4).forEach(renderHomeClubPost);
+    clubCards = document.querySelectorAll(".club-card");
+    homeRecruitEmpty.classList.toggle("is-visible", activePosts.length === 0);
+    renderHomeStats(posts, count);
+    applyHomeFilter();
   } catch (error) {
-    renderRecruitCount(baseCount);
+    clubGrid.innerHTML = "";
+    clubCards = document.querySelectorAll(".club-card");
+    homeRecruitEmpty.textContent = "모집 공고를 불러오지 못했습니다.";
+    homeRecruitEmpty.classList.add("is-visible");
+    renderHomeStats([], 0);
   }
 }
 
@@ -107,15 +214,11 @@ async function loadCurrentUser() {
 
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    const selectedFilter = button.dataset.filter;
+    activeFilter = button.dataset.filter;
 
     filterButtons.forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
-
-    clubCards.forEach((card) => {
-      const shouldShow = selectedFilter === "all" || card.dataset.category === selectedFilter;
-      card.classList.toggle("is-hidden", !shouldShow);
-    });
+    applyHomeFilter();
   });
 });
 
@@ -132,8 +235,14 @@ function ensureClubOption(clubName) {
   }
 }
 
-applyButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+if (clubGrid) {
+  clubGrid.addEventListener("click", (event) => {
+    const button = event.target.closest(".apply-button");
+
+    if (!button) {
+      return;
+    }
+
     const selectedClub = button.dataset.club;
 
     if (!clubSelect || !document.querySelector("#apply")) {
@@ -146,7 +255,7 @@ applyButtons.forEach((button) => {
     document.querySelector("#apply").scrollIntoView({ behavior: "smooth", block: "start" });
     clubSelect.focus({ preventScroll: true });
   });
-});
+}
 
 const selectedClubFromUrl = new URLSearchParams(window.location.search).get("club");
 
@@ -193,4 +302,4 @@ if (applyForm) {
 }
 
 loadCurrentUser();
-loadRecruitCount();
+loadRecruitPosts();

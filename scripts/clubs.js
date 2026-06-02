@@ -6,6 +6,7 @@ const resetSearchButton = document.querySelector("#resetSearch");
 const resultText = document.querySelector("#searchResultText");
 const emptyMessage = document.querySelector("#emptySearchMessage");
 const recruitDetailList = document.querySelector(".recruit-detail-list");
+const recruitSummaryCount = document.querySelector("#recruitSummaryCount");
 let recruitCards = document.querySelectorAll(".recruit-detail-card");
 const authUser = document.querySelector("[data-auth-user]");
 const authLoginLink = document.querySelector("[data-auth-login-link]");
@@ -82,6 +83,10 @@ function getCategoryLabel(category) {
     culture: "문화",
     sports: "운동",
     volunteer: "봉사",
+    performance: "공연",
+    startup: "창업",
+    media: "미디어",
+    religion: "종교",
   };
 
   return labels[category] || category;
@@ -120,7 +125,7 @@ function renderClubPost(post) {
     <a class="apply-button detail-apply-link" href="apply.html?club=${encodeURIComponent(post.clubName)}">지원하기</a>
   `;
 
-  recruitDetailList.prepend(article);
+  recruitDetailList.appendChild(article);
 }
 
 function attachCardNavigation() {
@@ -147,11 +152,15 @@ function attachCardNavigation() {
 async function loadClubPosts() {
   try {
     const { posts } = await requestJson("/api/club-posts");
+    recruitDetailList.innerHTML = "";
     posts.forEach(renderClubPost);
     recruitCards = document.querySelectorAll(".recruit-detail-card");
+    recruitSummaryCount.textContent = String(posts.length);
     attachCardNavigation();
   } catch (error) {
+    recruitDetailList.innerHTML = "";
     recruitCards = document.querySelectorAll(".recruit-detail-card");
+    recruitSummaryCount.textContent = "0";
     attachCardNavigation();
   }
 }

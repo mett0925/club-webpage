@@ -41,6 +41,7 @@ loadEnvFile();
 const START_PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = __dirname;
 const SESSION_COOKIE_NAME = "club_session";
+const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const sessions = new Map();
 const emailVerifications = new Map();
 const DB_NAME = process.env.DB_NAME || "club_web_page";
@@ -57,7 +58,7 @@ const poolDbConfig = {
 };
 let dbPool;
 let mailTransporter;
-const CLUB_NAMES = ["CodeMate", "Frame", "RunWave", "Warm Hand", "BizLab", "Stage On", "Court Mate", "Green Campus"];
+const CLUB_NAMES = [];
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -194,7 +195,7 @@ function parseCookies(cookieHeader = "") {
   }, {});
 }
 
-function getSessionUser(request) {
+function getSessionUser(request, response = null) {
   const cookies = parseCookies(request.headers.cookie);
   const sessionId = cookies[SESSION_COOKIE_NAME];
 
@@ -208,6 +209,22 @@ function getSessionUser(request) {
     return null;
   }
 
+  const lastActivityAt = session.lastActivityAt ?? session.createdAt ?? 0;
+
+  if (Date.now() - lastActivityAt > SESSION_IDLE_TIMEOUT_MS) {
+    sessions.delete(sessionId);
+
+    if (response) {
+      response.setHeader(
+        "Set-Cookie",
+        `${SESSION_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`
+      );
+    }
+
+    return null;
+  }
+
+  session.lastActivityAt = Date.now();
   return session.user;
 }
 
@@ -218,12 +235,17 @@ function updateSessionUser(request, user) {
 
   if (session) {
     session.user = user;
+    session.lastActivityAt = Date.now();
   }
 }
 
 function createSession(response, user) {
   const sessionId = crypto.randomBytes(32).toString("hex");
-  sessions.set(sessionId, { user, createdAt: Date.now() });
+  sessions.set(sessionId, {
+    user,
+    createdAt: Date.now(),
+    lastActivityAt: Date.now(),
+  });
 
   return {
     "Set-Cookie": `${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}; HttpOnly; Path=/; SameSite=Lax`,
@@ -508,6 +530,13 @@ async function getApplicationsByUserId(userId, studentId) {
   return rows;
 }
 
+async function getApplicationCount() {
+  const pool = await getDbPool();
+  const [rows] = await pool.execute(`SELECT COUNT(*) AS count FROM applications`);
+
+  return Number(rows[0].count) || 0;
+}
+
 async function updateApplication(applicationId, applicantUserId, applicantStudentId, application) {
   const pool = await getDbPool();
   const [result] = await pool.execute(
@@ -702,7 +731,7 @@ async function getAvailableClubNames() {
   const clubPosts = await getClubPosts();
   const dynamicClubNames = clubPosts.map((post) => post.clubName);
 
-  return [...new Set([...CLUB_NAMES, ...dynamicClubNames])];
+  return [...new Set(dynamicClubNames)];
 }
 
 function normalizeApplicationInput(input) {
@@ -759,7 +788,7 @@ function normalizeClubPostInput(input) {
     return { error: "모집 공고 내용을 모두 입력해주세요." };
   }
 
-  if (!["study", "culture", "sports", "volunteer"].includes(post.category)) {
+  if (!["study", "culture", "sports", "volunteer", "performance", "startup", "media", "religion"].includes(post.category)) {
     return { error: "분야를 올바르게 선택해주세요." };
   }
 
@@ -835,14 +864,14 @@ function validateCredentials(name, email, birthDate, studentId, password, passwo
 async function handleApiRequest(request, response, pathname) {
   try {
     if (request.method === "GET" && pathname === "/api/me") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       sendJson(response, 200, { user });
       return true;
     }
 
     if (request.method === "POST" && pathname === "/api/send-profile-verification") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -878,7 +907,7 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "POST" && pathname === "/api/verify-profile-access") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -1042,7 +1071,7 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "PUT" && pathname === "/api/me") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -1123,7 +1152,7 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/club-posts/mine") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -1157,7 +1186,7 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "POST" && pathname === "/api/club-posts") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인 후 모집 공고를 작성할 수 있습니다." });
@@ -1186,7 +1215,7 @@ async function handleApiRequest(request, response, pathname) {
     const clubPostMatch = pathname.match(/^\/api\/club-posts\/([^/]+)\/?$/);
 
     if ((request.method === "PUT" || request.method === "DELETE") && clubPostMatch) {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -1226,8 +1255,14 @@ async function handleApiRequest(request, response, pathname) {
       return true;
     }
 
+    if (request.method === "GET" && pathname === "/api/applications/count") {
+      const count = await getApplicationCount();
+      sendJson(response, 200, { count });
+      return true;
+    }
+
     if (request.method === "POST" && pathname === "/api/applications") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인 후 지원서를 제출할 수 있습니다." });
@@ -1262,7 +1297,7 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/applications/received") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -1277,7 +1312,7 @@ async function handleApiRequest(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/applications/mine") {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });
@@ -1292,7 +1327,7 @@ async function handleApiRequest(request, response, pathname) {
     const applicationMatch = pathname.match(/^\/api\/applications\/([^/]+)\/?$/);
 
     if ((request.method === "PUT" || request.method === "DELETE") && applicationMatch) {
-      const user = getSessionUser(request);
+      const user = getSessionUser(request, response);
 
       if (!user) {
         sendJson(response, 401, { message: "로그인이 필요합니다." });

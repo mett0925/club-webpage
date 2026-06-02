@@ -42,7 +42,7 @@
       <form class="post-form" id="clubPostForm">
         <label>
           동아리명
-          <input type="text" name="clubName" placeholder="예: CodeMate" required>
+          <input type="text" name="clubName" placeholder="예: 중앙밴드" required>
         </label>
         <label>
           분야
@@ -52,6 +52,10 @@
             <option value="culture">문화</option>
             <option value="sports">운동</option>
             <option value="volunteer">봉사</option>
+            <option value="performance">공연</option>
+            <option value="startup">창업</option>
+            <option value="media">미디어</option>
+            <option value="religion">종교</option>
           </select>
         </label>
         <label>
@@ -96,6 +100,7 @@
   </footer>
 
   <script src="../scripts/header-auth.js"></script>
+  <script src="../scripts/session-idle.js"></script>
   <script src="../scripts/post.js"></script>
 </body>
 </html>

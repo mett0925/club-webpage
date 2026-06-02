@@ -91,6 +91,10 @@ function getCategoryLabel(category) {
     culture: "문화",
     sports: "운동",
     volunteer: "봉사",
+    performance: "공연",
+    startup: "창업",
+    media: "미디어",
+    religion: "종교",
   };
 
   return labels[category] || category;
@@ -161,6 +165,10 @@ function renderMyClubPosts(posts) {
             <option value="culture" ${post.category === "culture" ? "selected" : ""}>문화</option>
             <option value="sports" ${post.category === "sports" ? "selected" : ""}>운동</option>
             <option value="volunteer" ${post.category === "volunteer" ? "selected" : ""}>봉사</option>
+            <option value="performance" ${post.category === "performance" ? "selected" : ""}>공연</option>
+            <option value="startup" ${post.category === "startup" ? "selected" : ""}>창업</option>
+            <option value="media" ${post.category === "media" ? "selected" : ""}>미디어</option>
+            <option value="religion" ${post.category === "religion" ? "selected" : ""}>종교</option>
           </select>
         </label>
         <label>

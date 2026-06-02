@@ -30,6 +30,26 @@ function setApplicationMessage(message, isError = false) {
   applicationMessage.classList.toggle("is-error", isError);
 }
 
+async function loadApplicationClubs() {
+  const { posts } = await applicationRequestJson("/api/club-posts");
+  const selectedClub = new URLSearchParams(window.location.search).get("club");
+
+  applicationClubSelect.innerHTML = '<option value="">동아리를 선택하세요</option>';
+  posts.forEach((post) => {
+    applicationClubSelect.add(new Option(post.clubName, post.clubName));
+  });
+
+  if (selectedClub) {
+    const hasOption = [...applicationClubSelect.options].some((option) => option.value === selectedClub);
+
+    if (hasOption) {
+      applicationClubSelect.value = selectedClub;
+    } else {
+      setApplicationMessage("현재 모집 중인 공고가 없는 동아리입니다.", true);
+    }
+  }
+}
+
 function fillClubFromUrl() {
   const clubName = new URLSearchParams(window.location.search).get("club");
 
@@ -63,6 +83,7 @@ async function loadApplicationUser() {
     applicationContent.hidden = false;
     applicationUserName.textContent = `${user.name}님`;
     applicationUserMeta.textContent = `학번 ${user.studentId} · ${user.email || "이메일 정보 없음"}`;
+    await loadApplicationClubs();
   } catch (error) {
     showLoginGuard();
   }
@@ -82,11 +103,10 @@ applicationForm.addEventListener("submit", async (event) => {
 
     setApplicationMessage(payload.message);
     applicationForm.reset();
-    fillClubFromUrl();
+    loadApplicationClubs();
   } catch (error) {
     setApplicationMessage(error.message, true);
   }
 });
 
-fillClubFromUrl();
 loadApplicationUser();
