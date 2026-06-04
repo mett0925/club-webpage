@@ -45,7 +45,14 @@ async function loadHeaderAuth() {
 }
 
 if (headerLogoutButton) {
-  headerLogoutButton.addEventListener("click", async () => {
+  headerLogoutButton.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if (!confirm("정말 로그아웃하시겠습니까?")) {
+      return;
+    }
+
     try {
       await headerRequestJson("/api/logout", { method: "POST" });
     } finally {

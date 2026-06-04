@@ -205,6 +205,10 @@ dayFilter.addEventListener("change", applyRecruitFilters);
 deadlineFilter.addEventListener("change", applyRecruitFilters);
 resetSearchButton.addEventListener("click", resetRecruitFilters);
 authLogoutButton.addEventListener("click", async () => {
+  if (!confirm("정말 로그아웃하시겠습니까?")) {
+    return;
+  }
+
   try {
     await requestJson("/api/logout", { method: "POST" });
   } finally {
