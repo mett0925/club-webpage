@@ -35,6 +35,8 @@ async function getDbPool() {
   `);
   await ensureUsersEmailColumn(dbPool);
   await ensureUsersBirthDateColumn(dbPool);
+  await ensureUsersSocialAuthColumns(dbPool);
+  await ensureSocialAccountsTable(dbPool);
   await dbPool.query(`
     CREATE TABLE IF NOT EXISTS applications (
       id CHAR(36) PRIMARY KEY,
@@ -102,6 +104,44 @@ async function ensureUsersBirthDateColumn(pool) {
   }
 
   await pool.query("ALTER TABLE users ADD COLUMN birth_date DATE NULL AFTER email");
+}
+
+async function ensureUsersSocialAuthColumns(pool) {
+  const [studentIdColumn] = await pool.execute(
+    `SELECT CHARACTER_MAXIMUM_LENGTH AS maxLength
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users' AND COLUMN_NAME = 'student_id'`,
+    [DB_NAME]
+  );
+
+  if (studentIdColumn[0]?.maxLength && studentIdColumn[0].maxLength < 30) {
+    await pool.query("ALTER TABLE users MODIFY student_id VARCHAR(30) NOT NULL");
+  }
+
+  const [passwordColumn] = await pool.execute(
+    `SELECT IS_NULLABLE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users' AND COLUMN_NAME = 'password_hash'`,
+    [DB_NAME]
+  );
+
+  if (passwordColumn[0]?.IS_NULLABLE === "NO") {
+    await pool.query("ALTER TABLE users MODIFY password_hash VARCHAR(255) NULL");
+  }
+}
+
+async function ensureSocialAccountsTable(pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_social_accounts (
+      id CHAR(36) PRIMARY KEY,
+      user_id CHAR(36) NOT NULL,
+      provider VARCHAR(20) NOT NULL,
+      provider_user_id VARCHAR(100) NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY user_social_accounts_provider_user_unique (provider, provider_user_id),
+      INDEX user_social_accounts_user_id_idx (user_id)
+    )
+  `);
 }
 
 module.exports = {

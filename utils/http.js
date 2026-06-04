@@ -6,6 +6,14 @@ function sendJson(response, statusCode, payload, headers = {}) {
   response.end(JSON.stringify(payload));
 }
 
+function redirect(response, location, headers = {}) {
+  response.writeHead(302, {
+    Location: location,
+    ...headers,
+  });
+  response.end();
+}
+
 function readRequestBody(request) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -38,5 +46,6 @@ function readRequestBody(request) {
 
 module.exports = {
   sendJson,
+  redirect,
   readRequestBody,
 };

@@ -25,6 +25,13 @@
       <div class="auth-panel auth-panel-single">
         <form class="auth-form" id="signupForm">
           <h3>회원가입</h3>
+          <div class="social-login" data-social-login-section hidden>
+            <p class="social-login-label">소셜 계정으로 가입</p>
+            <div class="social-login-buttons">
+              <button class="social-login-button social-login-button-google" type="button" data-social-login="google" hidden>Google로 계속하기</button>
+            </div>
+          </div>
+          <p class="auth-divider" data-social-login-section hidden>또는 이메일로 가입</p>
           <label>
             이름
             <input type="text" name="name" placeholder="홍길동" required>
@@ -74,5 +81,6 @@
   </main>
 
   <script src="../scripts/signup.js"></script>
+  <script src="../scripts/social-auth.js"></script>
 </body>
 </html>

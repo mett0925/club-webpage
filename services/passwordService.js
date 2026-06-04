@@ -7,6 +7,10 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
 }
 
 function verifyPassword(password, passwordHash) {
+  if (!passwordHash) {
+    return false;
+  }
+
   const [salt, storedHash] = passwordHash.split(":");
 
   if (!salt || !storedHash) {

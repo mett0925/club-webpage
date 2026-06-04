@@ -1,5 +1,26 @@
+const crypto = require("crypto");
 const { getDbPool } = require("../config/database");
 const { hashPassword } = require("../services/passwordService");
+
+async function findUserById(userId) {
+  const pool = await getDbPool();
+  const [rows] = await pool.execute(
+    `SELECT
+      id,
+      name,
+      email,
+      birth_date AS birthDate,
+      student_id AS studentId,
+      password_hash AS passwordHash,
+      created_at AS createdAt
+    FROM users
+    WHERE id = ?
+    LIMIT 1`,
+    [userId]
+  );
+
+  return rows[0] || null;
+}
 
 async function findUserByStudentId(studentId) {
   const pool = await getDbPool();
@@ -79,9 +100,47 @@ async function createUser(user) {
   );
 }
 
+async function generateUniqueSocialStudentId(provider, providerUserId) {
+  const prefixMap = {
+    google: "G",
+    kakao: "K",
+    naver: "N",
+  };
+  const prefix = prefixMap[provider] || "S";
+  const hash = crypto.createHash("sha256").update(`${provider}:${providerUserId}`).digest("hex");
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = `${prefix}${hash.slice(attempt * 10, attempt * 10 + 11)}`;
+    const exists = await findUserByStudentId(candidate);
+
+    if (!exists) {
+      return candidate;
+    }
+  }
+
+  return `${prefix}${Date.now().toString().slice(-11)}`;
+}
+
+async function createSocialUser({ name, email, provider, providerUserId }) {
+  const user = {
+    id: crypto.randomUUID(),
+    name,
+    email,
+    birthDate: null,
+    studentId: await generateUniqueSocialStudentId(provider, providerUserId),
+    passwordHash: null,
+    createdAt: new Date().toISOString(),
+  };
+
+  await createUser(user);
+  return user;
+}
+
 module.exports = {
+  findUserById,
   findUserByStudentId,
   findUserByEmail,
   updateUserProfile,
   createUser,
+  createSocialUser,
 };

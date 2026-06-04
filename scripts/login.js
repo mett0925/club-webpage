@@ -44,8 +44,16 @@ document.querySelectorAll("[data-password-toggle]").forEach((button) => {
 
 signupLink.href = `signup.html?return=${encodeURIComponent(returnUrl)}`;
 
-if (new URLSearchParams(window.location.search).get("reason") === "idle") {
+const loginQuery = new URLSearchParams(window.location.search);
+
+if (loginQuery.get("reason") === "idle") {
   setMessage(loginMessage, "30분 동안 활동이 없어 자동으로 로그아웃되었습니다.", true);
+}
+
+const oauthError = loginQuery.get("oauthError");
+
+if (oauthError) {
+  setMessage(loginMessage, oauthError, true);
 }
 
 loginForm.addEventListener("submit", async (event) => {

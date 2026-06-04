@@ -217,7 +217,17 @@ async function handleApiRequest(request, response, pathname) {
       const normalizedPassword = String(password);
       const user = await findUserByStudentId(normalizedStudentId);
 
-      if (!user || !verifyPassword(normalizedPassword, user.passwordHash)) {
+      if (!user) {
+        sendJson(response, 401, { message: "학번 또는 비밀번호가 올바르지 않습니다." });
+        return true;
+      }
+
+      if (!user.passwordHash) {
+        sendJson(response, 401, { message: "이 계정은 소셜 로그인으로 접속해주세요." });
+        return true;
+      }
+
+      if (!verifyPassword(normalizedPassword, user.passwordHash)) {
         sendJson(response, 401, { message: "학번 또는 비밀번호가 올바르지 않습니다." });
         return true;
       }
