@@ -47,9 +47,14 @@ function isValidBirthDate(birthDate) {
     return false;
   }
 
-  const date = new Date(`${birthDate}T00:00:00`);
+  const [year, month, day] = birthDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
 
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === birthDate;
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }
 
 function validateProfileInput(name, email, birthDate, studentId, password = "", passwordConfirm = "") {
